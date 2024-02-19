@@ -8,7 +8,9 @@ locals {
   vpc_names = [for i in range(var.number_vpcs) : "csye-vpc-${i}"]
 }
 
+
 resourc "google_compute_network" "vpc" {
+
   count                           = var.number_vpcs
   name                            = "csye-vpc"
   auto_create_subnetworks         = false
