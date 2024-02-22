@@ -11,3 +11,4 @@ Run terraform init in your Terraform configuration directory to initialize the w
 Use terraform plan to create an execution plan. This step shows you what Terraform will do when you run terraform apply.
 #Apply Changes:
 Execute terraform apply to apply the changes required to reach the desired state of the configuration.
+implemented instance of Custom image by Teraform
