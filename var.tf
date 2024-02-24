@@ -1,34 +1,27 @@
 variable "credentials_File" {
-  default = "terraform-with-gcp-414418-a3b942c9e1ca.json"
+  default = "assignment-04-414723-6080b9227630.json"
 }
 
-variable "project_Id" {
-  default = "terraform-with-gcp-414418"
+variable "project_id" {
+  default = "assignment-04-414723"
+}
+
+variable "image_name" {
+  default = "my-custom-image"
 }
 
 variable "region" {
-  default = "us-east1"
+  default = "us-central1"
 }
 
 variable "webapp_Subnet_Cidr" {
-  default = "10.0.0.0/24"
-}
-
-variable "db_Subnet_Cidr" {
   default = "10.0.1.0/24"
 }
 
-variable "number_vpcs" {
-  description = "Number of VPCs to create"
-  default     = "1"
+variable "db_Subnet_Cidr" {
+  default = "10.0.2.0/24"
 }
 
-variable "number_webapp_subnets_per_vpc" {
-  description = "Number of subnets to create per VPC"
-  default     = "1"
-}
-
-variable "number_db_subnets_per_vpc" {
-  description = "Number of subnets to create per VPC"
-  default     = "1"
+variable "routing_mode" {
+  default = "REGIONAL"
 }
