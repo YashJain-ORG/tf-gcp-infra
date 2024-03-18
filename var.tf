@@ -25,3 +25,20 @@ variable "db_Subnet_Cidr" {
 variable "routing_mode" {
   default = "REGIONAL"
 }
+
+variable "routes" {
+  type = map(object({
+    dest_range       = string
+    next_hop_gateway = string
+    priority         = number
+    tags             = list(string)
+  }))
+  default = {
+    webapp = {
+      dest_range       = "0.0.0.0/0"
+      next_hop_gateway = "default-internet-gateway" // You can replace this with the appropriate gateway name
+      priority         = 1000
+      tags             = ["webapp"]
+    }
+  }
+}
