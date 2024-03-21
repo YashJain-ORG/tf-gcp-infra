@@ -96,6 +96,11 @@ resource "google_compute_instance" "vm_instance_webapp" {
   }
   tags = ["webapp"]
 
+  service_account {
+    email  = google_service_account.service_account.email
+    scopes = ["cloud-platform"]
+  }
+
   metadata_startup_script = <<-SCRIPT
     sudo bash -c 'cat > /opt/csye6225/webapp/.env <<EOT
     DB_USER=webapp
@@ -180,4 +185,31 @@ resource "google_sql_user" "new_user" {
   }
 }
 
+resource "google_dns_record_set" "dns_record" {
+  name         = "thewebapp.me."
+  type         = "A"
+  ttl          = 300
+  managed_zone = "us-central1-c"
+  rrdatas      = [google_compute_instance.vm_instance_webapp.network_interface[0].access_config[0].nat_ip]
+}
 
+# Create a service account
+resource "google_service_account" "service_account" {
+  account_id   = "webapp-service-account-id"
+  display_name = "webapp-service-account"
+}
+resource "google_project_iam_binding" "logging_admin_binding" {
+  project = var.project_id
+  role    = "roles/logging.admin"
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}",
+  ]
+}
+
+resource "google_project_iam_binding" "monitoring_admin_binding" {
+  project = var.project_id
+  role    = "roles/monitoring.admin"
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}",
+  ]
+}
