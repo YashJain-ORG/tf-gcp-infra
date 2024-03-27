@@ -121,6 +121,7 @@ resource "google_sql_database_instance" "my-sql" {
   depends_on          = [google_service_networking_connection.private_vpc_connection]
 
   settings {
+    # tier = "db-n1-standard-1"
     tier              = "db-f1-micro"
     disk_autoresize   = true
     disk_type         = "PD_SSD"
