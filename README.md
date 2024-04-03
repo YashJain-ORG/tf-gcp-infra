@@ -12,4 +12,3 @@ Use terraform plan to create an execution plan. This step shows you what Terrafo
 #Apply Changes:
 Execute terraform apply to apply the changes required to reach the desired state of the configuration.
 implemented instance of Custom image by Teraform
-

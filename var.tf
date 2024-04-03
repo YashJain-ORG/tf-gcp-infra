@@ -42,3 +42,22 @@ variable "routes" {
     }
   }
 }
+
+variable "db_user" {
+  default = "webapp"
+
+}
+variable "db_dialect" {
+  default = "mysql"
+
+}
+variable "db_name" {
+  default = "webapp"
+
+}
+
+variable "my_port" {
+  default = "3306"
+
+}
+
