@@ -51,18 +51,20 @@ resource "google_compute_network" "my-vpc" {
 
 resource "google_compute_subnetwork" "webapp" {
 
-  name          = "webapp"
-  ip_cidr_range = "10.0.1.0/24"
-  network       = google_compute_network.my-vpc.self_link
-  region        = var.region
+  name                     = "webapp"
+  ip_cidr_range            = "10.0.1.0/24"
+  network                  = google_compute_network.my-vpc.self_link
+  region                   = var.region
+  private_ip_google_access = true
 }
 
 resource "google_compute_subnetwork" "db" {
 
-  name          = "db"
-  ip_cidr_range = var.db_Subnet_Cidr
-  network       = google_compute_network.my-vpc.self_link
-  region        = var.region
+  name                     = "db"
+  ip_cidr_range            = var.db_Subnet_Cidr
+  network                  = google_compute_network.my-vpc.self_link
+  region                   = var.region
+  private_ip_google_access = true
 }
 
 resource "google_compute_route" "routes" {
@@ -119,13 +121,13 @@ resource "google_sql_database_instance" "my-sql" {
   database_version    = "MYSQL_8_0"
   deletion_protection = false
   depends_on          = [google_service_networking_connection.private_vpc_connection]
-
+  encryption_key_name = google_kms_crypto_key.sql_crypto_key.id
   settings {
     tier = "db-n1-standard-1"
     # tier              = "db-f1-micro"
     disk_autoresize   = true
     disk_type         = "PD_SSD"
-    disk_size         = 100
+    disk_size         = 70
     availability_type = "REGIONAL"
 
 
@@ -139,8 +141,23 @@ resource "google_sql_database_instance" "my-sql" {
       private_network                               = google_compute_network.my-vpc.self_link
       enable_private_path_for_google_cloud_services = true
     }
+
+
   }
 }
+# Assignment -09 start
+resource "google_project_service_identity" "sql_identity" {
+  provider = google-beta
+  project  = var.project_id
+  service  = "sqladmin.googleapis.com"
+}
+
+resource "google_kms_crypto_key_iam_binding" "key-binding-db" {
+  crypto_key_id = google_kms_crypto_key.sql_crypto_key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  members       = ["serviceAccount:${google_project_service_identity.sql_identity.email}"]
+}
+# Assignment -09 end
 
 # [START compute_internal_ip_private_access]
 resource "google_compute_global_address" "ip_private_address" {
@@ -247,7 +264,10 @@ resource "google_vpc_access_connector" "connector" {
 
 resource "google_storage_bucket" "yash-webapp-bucket-6225" {
   name     = "yash-webapp-bucket-6225"
-  location = "US"
+  location = var.region
+  encryption {
+    default_kms_key_name = google_kms_crypto_key.bucket_crypto_key.id
+  }
 }
 
 resource "google_storage_bucket_object" "archive" {
@@ -318,6 +338,8 @@ resource "google_cloudfunctions2_function" "cloud_function" {
 
 # *****************************************************************************
 
+# [START cloudloadbalancing_ext_http_gce_instance_template]
+
 resource "google_compute_instance_template" "webapp_template" {
   name         = "ass4-instance"
   machine_type = "n1-standard-1"
@@ -326,8 +348,12 @@ resource "google_compute_instance_template" "webapp_template" {
   disk {
     source_image = "projects/${var.project_id}/global/images/${var.image_name}"
     disk_type    = "pd-standard"
-    disk_size_gb = 100
+    disk_size_gb = 70
     mode         = "READ_WRITE"
+
+    disk_encryption_key {
+      kms_key_self_link = google_kms_crypto_key.vm_crypto_key.id
+    }
   }
 
   metadata = {
@@ -355,6 +381,7 @@ resource "google_compute_instance_template" "webapp_template" {
 
   tags = ["allow-health-check", "webapp"]
 }
+
 
 # [START cloudloadbalancing_ext_http_gce_instance_mig]
 resource "google_compute_region_instance_group_manager" "default" {
@@ -405,12 +432,12 @@ resource "google_compute_region_autoscaler" "autoscaler" {
   target = google_compute_region_instance_group_manager.default.id
 
   autoscaling_policy {
-    max_replicas    = 2
-    min_replicas    = 1
+    max_replicas    = 6
+    min_replicas    = 3
     cooldown_period = 40
 
     cpu_utilization {
-      target = 0.05
+      target = 0.01
     }
   }
 }
@@ -481,3 +508,63 @@ resource "google_compute_global_forwarding_rule" "default" {
   ip_address            = google_compute_global_address.default.id
 }
 # [END cloudloadbalancing_ext_http_gce_instance_forwarding_rule]
+
+#create a key for the service account
+resource "random_string" "my_random_string" {
+  length  = 8
+  special = false
+  upper   = false
+}
+resource "google_kms_key_ring" "my_key_ring" {
+  name     = "keyRing-${random_string.my_random_string.result}"
+  location = var.region
+}
+
+resource "google_kms_crypto_key" "vm_crypto_key" {
+  name            = "vm-key"
+  key_ring        = google_kms_key_ring.my_key_ring.id
+  rotation_period = "2592000s" # 30 days in seconds
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "google_kms_crypto_key" "sql_crypto_key" {
+  name            = "sql-key"
+  key_ring        = google_kms_key_ring.my_key_ring.id
+  rotation_period = "2592000s" # 30 days
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "google_kms_crypto_key" "bucket_crypto_key" {
+  name            = "bucket-key"
+  key_ring        = google_kms_key_ring.my_key_ring.id
+  rotation_period = "2592000s" # 30 days
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "google_kms_crypto_key_iam_binding" "key-binding-bucket" {
+  crypto_key_id = google_kms_crypto_key.bucket_crypto_key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  members       = ["serviceAccount:service-18593162284@gs-project-accounts.iam.gserviceaccount.com"]
+}
+
+resource "google_kms_crypto_key_iam_binding" "key-binding-vm" {
+  crypto_key_id = google_kms_crypto_key.vm_crypto_key.id
+  role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  members       = ["serviceAccount:service-18593162284@compute-system.iam.gserviceaccount.com"]
+}
+
+resource "google_project_iam_binding" "service_agent_iam_binding" {
+  project = var.project_id
+  role    = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+  members = ["serviceAccount:service-18593162284@compute-system.iam.gserviceaccount.com"]
+
+}
