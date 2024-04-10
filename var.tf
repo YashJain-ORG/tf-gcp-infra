@@ -60,4 +60,3 @@ variable "my_port" {
   default = "3306"
 
 }
-
