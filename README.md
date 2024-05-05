@@ -1,3 +1,5 @@
+![alt text]([url-to-image.png](https://github.com/YashJain-ORG/tf-gcp-infra#:~:text=3%20months%20ago-,Cloud%20Architecture%20diagram%20.png,-Cloud%20Architecture%20diagram) "Optional title")
+
 # Terraform Configuration for GCP Infrastructure
 
 Welcome to our Terraform configuration repository dedicated to deploying and managing infrastructure on the Google Cloud Platform (GCP). This document provides comprehensive details about the activated services, current configurations, and management steps, along with insights from previous assignments.
