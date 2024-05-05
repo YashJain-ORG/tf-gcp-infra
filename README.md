@@ -1,4 +1,5 @@
-![alt text]([url-to-image.png](https://github.com/YashJain-ORG/tf-gcp-infra#:~:text=3%20months%20ago-,Cloud%20Architecture%20diagram%20.png,-Cloud%20Architecture%20diagram) "Optional title")
+
+![Cloud Architecture diagram ](https://github.com/YashJain-ORG/tf-gcp-infra/assets/145181114/081d1562-7c8f-41e1-90bb-183e6da47452)
 
 # Terraform Configuration for GCP Infrastructure
 
